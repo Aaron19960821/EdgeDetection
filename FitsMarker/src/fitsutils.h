@@ -14,7 +14,9 @@
 #include<fitsio.h>
 #include<opencv2/highgui.hpp>
 
-cv::Mat readFits(char* filename, int mode);
+cv::Mat readFits(const char* filename, int mode);
+std::string getFitsname(const char* fitsPath);
+std::string getFitsDir(const char* fitspath);
 
 #endif
 

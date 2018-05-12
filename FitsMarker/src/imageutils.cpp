@@ -31,27 +31,24 @@ std::pair<double, double> getRange(cv::Mat src)
 cv::Mat rescale28U(cv::Mat src)
 {
 	auto originScale = getRange(src);
-	cv::Mat res(src.rows, src.cols, CV_8U);
+	cv::Mat res(src.rows, src.cols, CV_8UC1);
 	float scale = 255.0/(originScale.second - originScale.first);
-	float maxx = -1.0;
 
 	for(int i=0; i<src.rows; i++)
 	{
 		for(int j=0; j<src.cols; j++)
 		{
 			float scaletmp = (src.at<float>(i, j) - originScale.first) * scale;
-			maxx = fmax(scaletmp, maxx);
 			uchar pixel = std::floor(scaletmp);
 			res.at<uchar>(i,j) = pixel;
 		}
 	}
-	std::cout << maxx << std::endl;
 	return res;
 }
 
 cv::Mat canny(cv::Mat src, double thresh1, double thresh2)
 {
-	cv::Mat res(src.rows, src.cols, CV_8U);
+	cv::Mat res(src.rows, src.cols, CV_8UC1);
 	cv::Canny(src, res, thresh1, thresh2, 3, true);
 	return res;
 }

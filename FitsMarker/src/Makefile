@@ -1,23 +1,27 @@
 CXX = g++
-CFLAGS = -lopencv_core -lopencv_highgui -lopencv_imgproc
-COMMON = -c -I /usr/local/include
+CFLAGS = -lcfitsio -lopencv_core -lopencv_highgui -lopencv_imgproc
+COMMON = -std=c++11 -I /usr/local/include
+ADDITION = -c
 
 all: FitsMarker
 
-fitsutils.o:
-	g++ -c fitsutils.cpp -o fitsutils.o
+fitsutils.o: fitsutils.cpp fitsutils.h
+	$(CXX) $(ADDITION) $(COMMON) $(CFLAGS) fitsutils.cpp -o fitsutils.o
 
-imageutils.o:
-	$(CXX) $(COMMON) $(CFLAGS) imageutils.cpp -o imageutils.o
+imageutils.o: imageutils.cpp imageutils.h
+	$(CXX) $(ADDITION) $(COMMON) $(CFLAGS) imageutils.cpp -o imageutils.o
 
-main.o:
-	$(CXX) $(COMMON) $(CFLAGS) main.cpp -o main.o
+cannydetector.o: cannydetector.h cannydetector.cpp
+	$(CXX) $(ADDITION) $(COMMON) $(CFLAGS) cannydetector.cpp -o cannydetector.o
 
-cannydetector.o:
-	$(CXX) $(COMMON) $(CFLAGS) cannydetector.cpp -o cannydetector.o
+display.o: display.h display.cpp
+	$(CXX) $(ADDITION) $(COMMON) $(CFLAGS) display.cpp -o display.o
 
-FitsMarker: fitsutils.o imageutils.o main.o 
-	$(CXX) $(COMMON) $(CFLAGS) fitsutils.o imageutils.o main.o -o FitsMarker
+main.o: main.cpp
+	$(CXX) $(ADDITION) $(COMMON) $(CFLAGS) main.cpp -o main.o
+
+FitsMarker: cannydetector.o fitsutils.o imageutils.o display.o main.o 
+	$(CXX) $(COMMON) $(CFLAGS) fitsutils.o cannydetector.o display.o imageutils.o main.o -o FitsMarker
 
 clean:
 	rm *.o

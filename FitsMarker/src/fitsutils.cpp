@@ -7,10 +7,12 @@
 
 #include<iostream>
 #include<cstdio>
+#include<string.h>
+#include<string>
 #include<fitsio.h>
 #include<opencv2/highgui.hpp>
 
-cv::Mat readFits(char* filename, int mode)
+cv::Mat readFits(const char* filename, int mode)
 {
 	fitsfile* fptr;
 	int status = 0;
@@ -29,7 +31,7 @@ cv::Mat readFits(char* filename, int mode)
 	float* datatmp = (float*)malloc(naxis[0]*naxis[1]*sizeof(float));
 	fits_read_pix(fptr, TFLOAT, fpixel, naxis[0]*naxis[1], 0, datatmp, &anynull, &status);
 
-	cv::Mat data(naxis[0], naxis[1], CV_32F, datatmp);
+	cv::Mat data(naxis[0], naxis[1], CV_32FC1, datatmp);
 
 	free(datatmp);
 	fits_close_file(fptr, &status);
@@ -37,3 +39,40 @@ cv::Mat readFits(char* filename, int mode)
 	return data;
 }
 
+std::string getFitsname(const char* fitspath)
+{
+	assert(strlen(fitspath) > 4);
+	std::string resTmp(fitspath);
+
+	for(int i=strlen(fitspath)-1; i>=0; i--)
+	{
+		if(fitspath[i] == '/')
+		{
+			return resTmp.substr(i+1, strlen(fitspath)-i-6);
+		}
+	}
+
+	return NULL;
+}
+
+std::string getFitsDir(const char* fitspath)
+{
+	assert(strlen(fitspath) > 4);
+	std::string resTmp(fitspath);
+	bool flag = false;
+	for(int i=strlen(fitspath)-1; i>=0; i--)
+	{
+		if(fitspath[i] == '/')
+		{
+			if(!flag)
+			{
+				flag = true;
+			}
+			else
+			{
+				return resTmp.substr(0, i+1);
+			}
+		}
+	}
+	return NULL;
+}

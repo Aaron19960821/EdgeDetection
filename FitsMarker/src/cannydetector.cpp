@@ -9,23 +9,31 @@
 #include<iostream>
 #include<cstdio>
 #include<string>
+#include<string.h>
+#include<cmath>
 #include<assert.h>
 #include<utility>
 #include<vector>
+#include<fstream>
 
 #include"imageutils.h"
 #include"fitsutils.h"
+#include"cannydetector.h"
 
 cannyDetector::cannyDetector()
 {
-	this->thresh1 = 120;
-	this->thresh2 = 120*2 + 20;
+	thresh1 = 120;
+	thresh2 = 120*2 + 20;
 }
 
-cannyDetector::cannyDetector(double thresh1, double thresh2)
+cannyDetector::~cannyDetector()
 {
-	this->thresh1 = thresh1;
-	this->thresh2 = thresh2;
+}
+
+cannyDetector::cannyDetector(double thresh11, double thresh22)
+{
+	thresh1 = thresh11;
+	thresh2 = thresh22;
 }
 
 cv::Mat cannyDetector::detectFromSingleImage(cv::Mat src)
@@ -34,6 +42,10 @@ cv::Mat cannyDetector::detectFromSingleImage(cv::Mat src)
 	return canny(reimage, thresh1, thresh2);
 }
 
+/*
+ * Perform canny to a batch of images.
+ * filename is the path to the image list
+ */
 void cannyDetector::detectFromBatch(char* filename)
 {
 	char buf[256];
@@ -44,9 +56,12 @@ void cannyDetector::detectFromBatch(char* filename)
 
 	while(ifs.getline(buf, 256))
 	{
-		cv::Mat image = readFits(buf, 0);
-		cv::Mat edge = detectFromSingleImage(image, self.thresh1, self.thresh2);
-		std::vector<pair<int,int> >edgeMap;
+		std::cout << "Processing " << buf << std::endl;
+		
+		std::string file(buf);
+		cv::Mat image = readFits(file.c_str(), 0);
+		cv::Mat edge = detectFromSingleImage(image);
+		std::vector<std::pair<int,int> >edgeMap;
 		for(int i=0; i<edge.rows; i++)
 		{
 			for(int j=0; j<edge.cols;j++)
@@ -58,5 +73,26 @@ void cannyDetector::detectFromBatch(char* filename)
 				}
 			}
 		}
+		std::string dir(getFitsDir(buf));
+		std::string filename(getFitsname(buf));
+		filename = dir + "Annotation/" + filename + ".txt";
+		dumpEdgeToFile(edgeMap, filename.c_str());
 	}
+	ifs.close();
+	return;
+}
+
+void cannyDetector::dumpEdgeToFile(std::vector<std::pair<int,int> >edgeMap, const char* filename)
+{
+	std::ofstream ofs;
+	ofs.open(filename, std::ofstream::out);
+
+	assert(ofs.is_open());
+
+	for(auto pi : edgeMap)
+	{
+		ofs << pi.first << " " << pi.second << std::endl;
+	}
+	ofs.close();
+	return;
 }
