@@ -18,19 +18,29 @@
 class display
 {
 	private:
-		cv::Mat r;
-		cv::Mat g;
-		cv::Mat b;
-		cv::Mat im;
 		cv::Mat originPic;
-		std::vector<std::pair<int,int> > edgeMap;
-		std::vector<std::pair<int,int> > edgeMapTmp; 
+		cv::Mat reimage;
 		std::string picPath;
 		std::string annotationPath;
 		void readAnnotation();
-		void initShow();
+		//void imgOnMouse(int event, int x, int y, int flags, void* ustc);
 	public:
+		bool lpressed;
+		bool rpressed;
+		int tmpx;
+		int tmpy;
+		cv::Mat smallb;
+		cv::Mat smallg;
+		cv::Mat smallr;
+		cv::Mat r;
+		cv::Mat g;
+		cv::Mat b;
+
+		std::vector<std::pair<int,int> > edgeMapTmp; 
+		std::vector<std::pair<int,int> > edgeMap;
 		display(const char* filePath);
+		void reframe();
+		void initShow();
 };
 
 #endif
