@@ -22,10 +22,11 @@ void cv::imgOnMouse(int event, int x, int y, int flags, void* ustc)
 		screen -> tmpx = x;
 		screen -> tmpy = y;
 	}
-	else if(event == CV_EVENT_LBUTTONUP)
+	else if(event == CV_EVENT_LBUTTONUP && flags == 9)
 	{
 		if(screen -> lpressed)
 		{
+			std::cout << "Set ROI, eliminate all edge outside ROI" << std::endl;
 			if(x < screen -> tmpx)
 			{
 				std::swap(x, screen -> tmpx);
@@ -34,19 +35,49 @@ void cv::imgOnMouse(int event, int x, int y, int flags, void* ustc)
 			{
 				std::swap(y, screen -> tmpy);
 			}
-			for(auto pi : screen -> edgeMap)
+			screen -> keepEdge(screen->tmpx, x, screen->tmpy, y);
+			screen -> lpressed = false;
+			screen -> reframe();
+		}
+	}
+	else if(event == CV_EVENT_LBUTTONUP)
+	{
+		std::cout << flags << std::endl;
+		if(screen -> lpressed)
+		{
+			if(x == screen -> tmpx && y == screen -> tmpy)
 			{
-				if(pi.first >= screen -> tmpx && pi.first <= x && pi.second >= screen -> tmpy && pi.second <= y)
+				int isMarked = false;
+				std::vector<std::pair<int,int>> newEdgeMap;
+				for(auto pi : screen -> edgeMapTmp)
 				{
-					continue;
+					if(pi.first == y && pi.second == x)
+					{
+						isMarked = true;
+					}
+					else
+					{
+						newEdgeMap.push_back(pi);
+					}
+				}
+				if(isMarked)
+				{
+					screen -> b.at<uchar>(y, x) = screen -> reimage.at<uchar>(y, x);
+					screen -> g.at<uchar>(y, x) = screen -> reimage.at<uchar>(y, x);
+					screen -> r.at<uchar>(y, x) = screen -> reimage.at<uchar>(y, x);
+					std::cout << "Unmark a pixel at (" << x << "," << y << ")" << std::endl;
 				}
 				else
 				{
-					screen -> edgeMapTmp.push_back(pi);
+					screen -> b.at<uchar>(y, x) = 0;
+					screen -> r.at<uchar>(y, x) = 255;
+					screen -> g.at<uchar>(y, x) = 0;
+					std::cout << "Mark a pixel at (" << x << "," << y << ")" << std::endl;
+					newEdgeMap.push_back(std::make_pair(y, x));
 				}
+				screen -> edgeMapTmp = newEdgeMap;
+				screen -> reframe();
 			}
-			screen -> lpressed = false;
-			screen -> reframe();
 		}
 	}
 	else if(event == CV_EVENT_MOUSEMOVE)
@@ -59,27 +90,7 @@ void cv::imgOnMouse(int event, int x, int y, int flags, void* ustc)
 		r = l + 20;
 		d = max(0, y - 10);
 		u = d + 20;
-		for(int i=d; i<=u; i++)
-		{
-			for(int j=l; j<=r; j++)
-			{
-				for(int k=(i-d)*10; k<(i-d)*10+10; k++)
-				{
-					for(int p=(j-l)*10; p<(j-l)*10+10; p++)
-					{
-						screen -> smallb.at<uchar>(k,p) = screen -> b.at<uchar>(i,j);
-						screen -> smallg.at<uchar>(k,p) = screen -> g.at<uchar>(i,j);
-						screen -> smallr.at<uchar>(k,p) = screen -> r.at<uchar>(i,j);
-						if(i == y && j == x)
-						{
-							screen -> smallb.at<uchar>(k,p) = 255;
-							screen -> smallg.at<uchar>(k,p) = 0;
-							screen -> smallr.at<uchar>(k,p) = 0;
-						}
-					}
-				}
-			}
-		}
+		screen -> larger.refresh(screen -> b, screen -> g, screen -> r, d, l, x, y);
 		screen -> reframe();
 	}
 }

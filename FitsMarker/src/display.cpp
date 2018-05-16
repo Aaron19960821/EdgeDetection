@@ -29,9 +29,9 @@ display::display(const char* filePath)
 	annotationPath = imageDir + "Annotation/" + imageName + ".txt";
 	readAnnotation();
 
-	smallb = cv::Mat::zeros(210, 210, CV_8U);
-	smallg = cv::Mat::zeros(210, 210, CV_8U);
-	smallr = cv::Mat::zeros(210, 210, CV_8U);
+	reimage = rescale28U(originPic);
+	larger = largeDisplay(21, 21, 10);
+
 
 	cv::namedWindow("img", 1);
 	cv::namedWindow("dst", 1);
@@ -42,7 +42,6 @@ display::display(const char* filePath)
 
 void display::initShow()
 {
-	reimage = rescale28U(originPic);
 	reimage.copyTo(b);
 	reimage.copyTo(g);
 	reimage.copyTo(r);
@@ -64,16 +63,28 @@ void display::initShow()
 	std::cout << im.rows << std::endl;
 }
 
-void display::reframe()
+void display::keepEdge(int xmin, int xmax, int ymin, int ymax)
 {
+	std::vector<std::pair<int,int>> newEdgeMap;
 	for(auto pi : edgeMapTmp)
 	{
+		if(pi.first >= xmin && pi.first <= xmax && pi.second >= ymin && pi.second <= ymax)
+		{
+			newEdgeMap.push_back(pi);
+		}
+		else
+		{
 		r.at<uchar>(pi.first, pi.second) = reimage.at<uchar>(pi.first, pi.second);
 		g.at<uchar>(pi.first, pi.second) = reimage.at<uchar>(pi.first, pi.second);
 		b.at<uchar>(pi.first, pi.second) = reimage.at<uchar>(pi.first, pi.second);
+		}
 	}
-	edgeMapTmp.clear();
+	edgeMapTmp = newEdgeMap;
+	return;
+}
 
+void display::reframe()
+{
 	cv::Mat channels[3];
 	cv::Mat im;
 	channels[0] = b;
@@ -83,9 +94,9 @@ void display::reframe()
 	cv::imshow("img", im);
 
 	cv::Mat smallim;
-	channels[0] = smallb;
-	channels[1] = smallg;
-	channels[2] = smallr;
+	channels[0] = larger.b;
+	channels[1] = larger.g;
+	channels[2] = larger.r;
 	cv::merge(channels, 3, smallim);
 	cv::imshow("dst", smallim);
 }
@@ -95,15 +106,93 @@ void display::readAnnotation()
 	std::ifstream ifs;
 	ifs.open(annotationPath, std::ifstream::in);
 
-	assert(ifs.is_open());
+	if(!ifs.is_open())
+	{
+		return;
+	}
 
 	int tmpx;
 	int tmpy;
 	while(ifs >> tmpx >> tmpy)
 	{
 		edgeMap.push_back(std::make_pair(tmpx, tmpy));
+		edgeMapTmp.push_back(std::make_pair(tmpx, tmpy));
 	}
 	ifs.close();
 	return;
+}
+
+void display::saveAnnotation()
+{
+	std::ofstream ofs;
+	ofs.open(annotationPath, std::ofstream::out);
+
+	assert(ofs.is_open());
+
+	for(auto pi : edgeMapTmp)
+	{
+		ofs << pi.first << " " << pi.second << std::endl;
+	}
+	ofs.close();
+	return;
+	
+}
+
+largeDisplay::largeDisplay(int w, int h, int dim)
+{
+	r = cv::Mat(w*dim, h*dim, CV_8U);
+	g = cv::Mat(w*dim, h*dim, CV_8U);
+	b = cv::Mat(w*dim, h*dim, CV_8U);
+	this -> w = w;
+	this -> h = h;
+	this -> dim = dim;
+}
+
+int largeDisplay::geth()
+{
+	return h;
+}
+
+int largeDisplay::getw()
+{
+	return w;
+}
+
+int largeDisplay::getdim()
+{
+	return dim;
+}
+
+void largeDisplay::refresh(cv::Mat bb, cv::Mat gg, cv::Mat rr, int d, int l, int x, int y)
+{
+	for(int i=d; i<d+h; i++)
+		{
+			for(int j=l; j<l+w; j++)
+			{
+				for(int k=(i-d)*dim; k<(i-d)*dim+dim; k++)
+				{
+					for(int p=(j-l)*dim; p<(j-l)*dim+dim; p++)
+					{
+						b.at<uchar>(k,p) = bb.at<uchar>(i,j);
+						g.at<uchar>(k,p) = gg.at<uchar>(i,j);
+						r.at<uchar>(k,p) = rr.at<uchar>(i,j);
+						//the center of larger display set to blue
+						if(i == y && j == x)
+						{
+							b.at<uchar>(k,p) = 255;
+							g.at<uchar>(k,p) = 0;
+							r.at<uchar>(k,p) = 0;
+						}
+					}
+				}
+			}
+		}
+}
+
+largeDisplay::largeDisplay()
+{
+	w = 21;
+	h = 21;
+	dim = 10;
 }
 
