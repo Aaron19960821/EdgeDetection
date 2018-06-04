@@ -17,6 +17,7 @@
 #include<fstream>
 
 #include"imageutils.h"
+#include"fitsmarker.h"
 #include"fitsutils.h"
 #include"cannydetector.h"
 
@@ -36,10 +37,34 @@ cannyDetector::cannyDetector(double thresh11, double thresh22)
 	thresh2 = thresh22;
 }
 
-cv::Mat cannyDetector::detectFromSingleImage(cv::Mat src)
+cv::Mat cannyDetector::getEdgeFromSingleImage(cv::Mat src)
 {
 	cv::Mat reimage = rescale28U(src);
 	return canny(reimage, thresh1, thresh2);
+}
+
+void cannyDetector::detectFromSingleImage(char* filename)
+{
+	std::cout << "Processing " << filename << std::endl;
+	std::string file(filename);
+	cv::Mat image = readFits(file.c_str(), 0);
+	cv::Mat edge = getEdgeFromSingleImage(image);
+	std::vector<std::pair<int,int> >edgeMap;
+	for(int i=0; i<edge.rows; i++)
+	{
+		for(int j=0; j<edge.cols;j++)
+		{
+			uchar pixel = edge.at<uchar>(i,j);
+			if(pixel > 0)
+			{
+				edgeMap.push_back(std::make_pair(i,j));
+			}
+		}
+	}
+	std::string dir(getFitsDir(filename));
+	std::string outfilename(getFitsname(filename));
+	outfilename = dir + "Annotation/" + outfilename + ".txt";
+	dumpEdgeToFile(edgeMap, outfilename.c_str());
 }
 
 /*
@@ -60,7 +85,7 @@ void cannyDetector::detectFromBatch(char* filename)
 		
 		std::string file(buf);
 		cv::Mat image = readFits(file.c_str(), 0);
-		cv::Mat edge = detectFromSingleImage(image);
+		cv::Mat edge = getEdgeFromSingleImage(image);
 		std::vector<std::pair<int,int> >edgeMap;
 		for(int i=0; i<edge.rows; i++)
 		{

@@ -51,12 +51,25 @@ int main(int argc, char** argv)
 			if(c == 'y')
 			{
 				screen.saveAnnotation();
+				break;
 			}
 			else if(c == 'n')
 			{
 				break;
 			}
 		}
+	}
+	else if(strcmp(argv[1], "-ds") == 0)
+	{
+		double thresh1 = 120.0;
+		double thresh2 = 120.0*2;
+		if(argc >= 5)
+		{
+			thresh1 = atof(argv[3]);
+			thresh2 = atof(argv[4]);
+		}
+		cannyDetector detector(120, 120.0*3);
+		detector.detectFromSingleImage(argv[2]);
 	}
 	else
 	{

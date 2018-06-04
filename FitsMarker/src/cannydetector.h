@@ -22,10 +22,11 @@ class cannyDetector
 		explicit cannyDetector(double thresh1, double thresh2);
 		explicit cannyDetector();
 		~cannyDetector();
-		cv::Mat detectFromSingleImage(cv::Mat src);
 		void detectFromBatch(char* filename);
+		void detectFromSingleImage(char* filename);
 		static void dumpEdgeToFile(std::vector<std::pair<int,int> >edgeMap, const char* filename);
 	private:
+		cv::Mat getEdgeFromSingleImage(cv::Mat src);
 		double thresh1;
 		double thresh2;
 };

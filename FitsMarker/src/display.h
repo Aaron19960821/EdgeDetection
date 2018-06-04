@@ -20,14 +20,20 @@ class largeDisplay
 	public:
 		largeDisplay(int w, int h, int dim);
 		largeDisplay();
+		void setx(int newx, int maxx);
+		void sety(int newy, int maxy);
+		int getx();
+		int gety();
 		int getw();
 		int geth();
 		int getdim();
-		void refresh(cv::Mat bb, cv::Mat gg, cv::Mat rr, int d, int l, int x, int y);
+		void refresh(cv::Mat bb, cv::Mat gg, cv::Mat rr);
 		cv::Mat r;
 		cv::Mat g;
 		cv::Mat b;
 	private:
+		int x;
+		int y;
 		int w;
 		int h;
 		int dim;
@@ -52,6 +58,7 @@ class display
 		cv::Mat g;
 		cv::Mat b;
 		largeDisplay larger;
+		largeDisplay unmarkLarger;
 
 		std::vector<std::pair<int,int> > edgeMapTmp; 
 		std::vector<std::pair<int,int> > edgeMap;
@@ -59,6 +66,7 @@ class display
 		void reframe();
 		void initShow();
 		void keepEdge(int xmin, int xmax, int ymin, int ymax);
+		void eliminateEdge(int xmin, int xmax, int ymin, int ymax);
 		void saveAnnotation();
 };
 

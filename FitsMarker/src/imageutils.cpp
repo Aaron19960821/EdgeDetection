@@ -6,11 +6,14 @@
  ************************************************************************/
 
 #include<iostream>
+#include<cstdio>
 #include<string>
 #include<utility>
 #include<opencv2/highgui.hpp>
 #include<opencv2/opencv.hpp>
 #include<cmath>
+
+#define TEST 0
 
 std::pair<double, double> getRange(cv::Mat src)
 {
@@ -33,6 +36,9 @@ cv::Mat rescale28U(cv::Mat src)
 	auto originScale = getRange(src);
 	cv::Mat res(src.rows, src.cols, CV_8UC1);
 	float scale = 255.0/(originScale.second - originScale.first);
+#if TEST
+	float maxPixel = -1.0;
+#endif
 
 	for(int i=0; i<src.rows; i++)
 	{
@@ -40,9 +46,18 @@ cv::Mat rescale28U(cv::Mat src)
 		{
 			float scaletmp = (src.at<float>(i, j) - originScale.first) * scale;
 			uchar pixel = std::floor(scaletmp);
+#if TEST
+			maxPixel = fmax(scaletmp, maxPixel);
+			if(pixel > 200) std::cout << i << " " << j << std::endl;
+#endif
 			res.at<uchar>(i,j) = pixel;
 		}
 	}
+#if TEST
+	std::cout << maxPixel << std::endl;
+	std::cout << src.rows << std::endl;
+	std::cout << src.cols << std::endl;
+#endif
 	return res;
 }
 

@@ -15,6 +15,7 @@
 #include<opencv2/imgproc.hpp>
 
 #include"fitsutils.h"
+#include"fitsmarker.h"
 #include"imageutils.h"
 #include"display.h"
 #include"displayUtils.h"
@@ -31,13 +32,23 @@ display::display(const char* filePath)
 
 	reimage = rescale28U(originPic);
 	larger = largeDisplay(21, 21, 10);
+	unmarkLarger = largeDisplay(21, 21, 10);
 
 
 	cv::namedWindow("img", 1);
 	cv::namedWindow("dst", 1);
+	cv::namedWindow("unmarkedDst", 1);
 	cv::setMouseCallback("img", &cv::imgOnMouse, (void*)this);
 	initShow();
-	cv::waitKeyEx(0);
+	while(1)
+	{
+		int c = cv::waitKey(0);
+		int res = cv::imgOnKeyboard(c, (void*)this);
+		if(res < 0)
+		{
+			break;
+		}
+	}
 }
 
 void display::initShow()
@@ -60,25 +71,60 @@ void display::initShow()
 	channels[2] = r;
 	cv::merge(channels, 3, im);
 	cv::imshow("img", im);
-	std::cout << im.rows << std::endl;
 }
+
+/*
+ * Eliminate all edge points inside the ROI
+ */
 
 void display::keepEdge(int xmin, int xmax, int ymin, int ymax)
 {
+	int eliminateEdgeNum = 0;
 	std::vector<std::pair<int,int>> newEdgeMap;
 	for(auto pi : edgeMapTmp)
 	{
-		if(pi.first >= xmin && pi.first <= xmax && pi.second >= ymin && pi.second <= ymax)
+		if(pi.first >= ymin && pi.first <= ymax && pi.second >= xmin && pi.second <= xmax)
 		{
 			newEdgeMap.push_back(pi);
 		}
 		else
 		{
+			eliminateEdgeNum++;
 		r.at<uchar>(pi.first, pi.second) = reimage.at<uchar>(pi.first, pi.second);
 		g.at<uchar>(pi.first, pi.second) = reimage.at<uchar>(pi.first, pi.second);
 		b.at<uchar>(pi.first, pi.second) = reimage.at<uchar>(pi.first, pi.second);
 		}
 	}
+	std::cout << "Eliminate " << eliminateEdgeNum << std::endl;
+	edgeMapTmp = newEdgeMap;
+	return;
+}
+
+/*
+ * Eliminate all edge points inside ROI
+ */
+void display::eliminateEdge(int xmin, int xmax, int ymin, int ymax)
+{
+	int eliminateEdgeNum = 0;
+	std::vector<std::pair<int,int>> newEdgeMap;
+#if TEST
+	std::cout << "Hh" << std::endl;
+#endif
+	for(auto pi : edgeMapTmp)
+	{
+		if(pi.first >= ymin && pi.first <= ymax && pi.second >= xmin && pi.second <= xmax)
+		{
+			eliminateEdgeNum++;
+			r.at<uchar>(pi.first, pi.second) = reimage.at<uchar>(pi.first, pi.second);
+			g.at<uchar>(pi.first, pi.second) = reimage.at<uchar>(pi.first, pi.second);
+			b.at<uchar>(pi.first, pi.second) = reimage.at<uchar>(pi.first, pi.second);
+		}
+		else
+		{
+			newEdgeMap.push_back(pi);
+		}
+	}
+	std::cout << "Eliminate " << eliminateEdgeNum << std::endl;
 	edgeMapTmp = newEdgeMap;
 	return;
 }
@@ -99,6 +145,13 @@ void display::reframe()
 	channels[2] = larger.r;
 	cv::merge(channels, 3, smallim);
 	cv::imshow("dst", smallim);
+
+	cv::Mat unmarkSmallIm;
+	channels[0] = unmarkLarger.b;
+	channels[1] = unmarkLarger.g;
+	channels[2] = unmarkLarger.r;
+	cv::merge(channels, 3, unmarkSmallIm);
+	cv::imshow("unmarkedDst", unmarkSmallIm);
 }
 
 void display::readAnnotation()
@@ -163,8 +216,16 @@ int largeDisplay::getdim()
 	return dim;
 }
 
-void largeDisplay::refresh(cv::Mat bb, cv::Mat gg, cv::Mat rr, int d, int l, int x, int y)
+
+/*
+ * Refresh largeDisplay with given overall rgb matrics
+ */
+void largeDisplay::refresh(cv::Mat bb, cv::Mat gg, cv::Mat rr)
 {
+	int d = std::max(y - h/2, 0);
+	d = std::min(d, bb.rows - h);
+	int l = std::max(x - w/2, 0);
+	l = std::min(l, bb.cols - w);
 	for(int i=d; i<d+h; i++)
 		{
 			for(int j=l; j<l+w; j++)
@@ -194,5 +255,29 @@ largeDisplay::largeDisplay()
 	w = 21;
 	h = 21;
 	dim = 10;
+}
+
+int largeDisplay::getx()
+{
+	return x;
+}
+
+int largeDisplay::gety()
+{
+	return y;
+}
+
+void largeDisplay::setx(int newx, int maxx)
+{
+	if(newx < 0)newx = 0;
+	else if(newx >= maxx) newx = maxx - 1;
+	x = newx;
+}
+
+void largeDisplay::sety(int newy, int maxy)
+{
+	if(newy < 0)newy = 0;
+	else if(newy >= maxy) newy = maxy - 1;
+	y = newy;
 }
 
