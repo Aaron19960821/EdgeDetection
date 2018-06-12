@@ -15,6 +15,7 @@ class LRModel:
 
     def __init__(self):
         self.loaded = False
+        self.phase = -1
 
     def getBias(self, name):
         res = tf.truncated_normal(shape=[1], stddev = .5)
@@ -35,26 +36,30 @@ class LRModel:
         bias = self.getBias(name = 'bias')
         self.W = W
         self.bias = bias
-        self.params = [W, bias]
 
         self.production = tf.add(tf.matmul(self.X, self.W), self.bias)
         self.pred = tf.sigmoid(self.production)
-        self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=self.Y, logits=self.production[:,0]))
-        self.optimizer = tf.train.GradientDescentOptimizer(self.learningRate).minimize(self.loss)
+
+        if self.phase == 0:
+            self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=self.Y, logits=self.production[:,0]))
+            self.optimizer = tf.train.GradientDescentOptimizer(self.learningRate).minimize(self.loss)
         return
 
     def saveParams(self, tgtDir):
         modelFile = os.path.join(tgtDir, 'model.npy')
-        np.save(modelFile, self.res)
+        np.save(modelFile, self.paramList)
         return
 
-    def train(self, tgtDir, configFile, input_fn):
+    def loadTrainConfig(self, configFile):
         config = json.load(open(configFile, 'r'))
         self.batchsize = int(config['batchsize'])
         self.batches = int(config['batches'])
         self.featureLength = int(config['featurelength'])
         self.learningRate = float(config['learningrate'])
+        self.phase = 0
 
+    def train(self, tgtDir, configFile, input_fn):
+        self.loadTrainConfig(configFile)
         self.buildModel()
 
         init = tf.global_variables_initializer()
@@ -71,11 +76,11 @@ class LRModel:
                     print 'saveing...weights'
                     resw = sess.run(self.W)
                     resb = sess.run(self.bias)
-                    self.res = [resw, resb]
+                    self.paramList = [resw, resb]
                     self.saveParams(tgtDir)
             resw = sess.run(self.W)
             resb = sess.run(self.bias)
-            self.res = [resw, resb]
+            self.paramList = [resw, resb]
         self.saveParams(tgtDir)
 
     def loadWeights(self, modelFile):
@@ -96,8 +101,8 @@ class LRModel:
     def loadExistedModel(self, configFile, modelFile):
         config = json.load(open(configFile, 'r'))
         self.featureLength = int(config['featurelength'])
-        self.learningRate = float(config['learningrate'])
         self.buildModel()
         self.loadWeights(modelFile)
         self.loaded = True
+        self.phase = 1
 
