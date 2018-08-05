@@ -1,0 +1,6 @@
+{
+	"batchsize": 80,
+	"batches": 300,
+	"featurelength": 2,
+	"learningrate": 0.2
+}

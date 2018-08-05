@@ -1,0 +1,10 @@
+{
+	"width": 512,
+	"height": 512,
+	"channel": 1,
+	"learningrate": 1e-3,
+	"momentum": 0.9,
+	"batchsize": 4,
+	"batchnum": 100,
+	"classes": 2
+}

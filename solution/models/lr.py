@@ -58,6 +58,15 @@ class LRModel:
         self.learningRate = float(config['learningrate'])
         self.phase = 0
 
+    def evaluate(self, pred, truth):
+        correctNum = 0.0
+        for i in range(len(pred)):
+            if pred[i] >= .5 and truth[i] >= .5:
+                correctNum += 1.0
+            elif pred[i] < .5 and truth[i] < .5:
+                correctNum += 1.0
+        return correctNum / len(pred)
+
     def train(self, tgtDir, configFile, input_fn):
         self.loadTrainConfig(configFile)
         self.buildModel()
@@ -67,10 +76,11 @@ class LRModel:
             sess.run(init)
             for i in range(self.batches):
                 x, y = input_fn()
-                sess.run(self.optimizer, feed_dict={self.X:x, self.Y:y})
-                loss = sess.run(self.loss, feed_dict={self.X:x, self.Y:y})
-                pred = sess.run(self.pred, feed_dict={self.X:x})
-                print "Batch #" + str(i) + " Loss = " + str(loss)
+                sess.run(self.optimizer, feed_dict = {self.X:x, self.Y:y})
+                loss = sess.run(self.loss, feed_dict = {self.X:x, self.Y:y})
+                pred = sess.run(self.pred, feed_dict = {self.X:x})
+                acc = self.evaluate(pred, y)
+                print "Batch #" + str(i) + " Loss = " + str(loss) + " Acc = " + str(acc)
 
                 if i % 50 == 0:
                     print 'saveing...weights'

@@ -1,0 +1,12 @@
+{
+	"objective": "binary:logistic",
+	"booster": "gbtree",
+	"nthread": 4,
+	"eta": 0.3,
+	"gamma": 0,
+	"subsample": 0.2,
+	"max_leaves": 64,
+	"max_depth": 10,
+	"batches": 100,
+	"min_child_weight": 1
+}

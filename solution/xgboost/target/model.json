@@ -1,0 +1,1 @@
+{"batches": 100, "model_file": "model.bst", "nthread": 4, "min_child_weight": 1, "max_leaves": 64, "subsample": 0.2, "eta": 0.3, "objective": "binary:logistic", "max_depth": 10, "gamma": 0, "booster": "gbtree"}
